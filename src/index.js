@@ -12,6 +12,13 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Check for required token
+if (!process.env.DISCORD_TOKEN) {
+  console.error('❌ DISCORD_TOKEN environment variable is not set!');
+  console.error('Please set DISCORD_TOKEN in your .env file or Railway environment variables.');
+  process.exit(1);
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
