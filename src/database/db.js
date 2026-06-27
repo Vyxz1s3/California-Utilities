@@ -21,8 +21,7 @@ export async function initializeDatabase() {
     const res = await pool.query('SELECT NOW()');
     console.log('✅ Database connected:', res.rows[0]);
   } catch (err) {
-    console.error('❌ Database connection failed:', err.message);
-    process.exit(1);
+    console.warn('⚠️ Database connection failed, will retry on next use:', err.message);
   }
 }
 

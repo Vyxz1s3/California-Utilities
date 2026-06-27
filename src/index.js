@@ -32,8 +32,12 @@ client.slashCommands = new Collection();
 client.cooldowns = new Collection();
 client.events = new Collection();
 
-// Initialize database
-await initializeDatabase();
+// Initialize database (non-blocking — bot starts even if DB isn't ready yet)
+try {
+  await initializeDatabase();
+} catch (err) {
+  console.warn('⚠️ Database initialization skipped:', err.message);
+}
 
 // Load commands and events
 await loadCommands(client, __dirname);
