@@ -126,6 +126,81 @@ const migrations = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
   )`,
+
+  // Economy: shop items catalogue
+  `CREATE TABLE IF NOT EXISTS economy_items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    price INT NOT NULL,
+    sell_price INT NOT NULL,
+    description TEXT,
+    emoji VARCHAR(50),
+    rarity VARCHAR(50) DEFAULT 'common',
+    usable BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Economy: user inventory
+  `CREATE TABLE IF NOT EXISTS user_inventory (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    item_id INT NOT NULL REFERENCES economy_items(id) ON DELETE CASCADE,
+    quantity INT DEFAULT 1,
+    acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, item_id)
+  )`,
+
+  // Economy: user businesses
+  `CREATE TABLE IF NOT EXISTS user_businesses (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    level INT DEFAULT 1,
+    total_earnings BIGINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Economy: user pets
+  `CREATE TABLE IF NOT EXISTS user_pets (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    pet_type VARCHAR(50) NOT NULL,
+    name VARCHAR(255),
+    happiness INT DEFAULT 100,
+    hunger INT DEFAULT 0,
+    adopted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Economy: user achievements
+  `CREATE TABLE IF NOT EXISTS user_achievements (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    achievement_id VARCHAR(100) NOT NULL,
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, achievement_id)
+  )`,
+
+  // Economy: user cooldowns (persistent across restarts)
+  `CREATE TABLE IF NOT EXISTS user_cooldowns (
+    user_id BIGINT NOT NULL,
+    command VARCHAR(100) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, command)
+  )`,
+
+  // Seed default shop items (idempotent)
+  `INSERT INTO economy_items (name, price, sell_price, description, emoji, rarity, usable) VALUES
+    ('Apple',          10,    5,    'A fresh apple.',                          '🍎', 'common',    FALSE),
+    ('Bread',          15,    7,    'A loaf of bread.',                        '🍞', 'common',    FALSE),
+    ('Fish',           20,    10,   'A raw fish.',                             '🐟', 'common',    FALSE),
+    ('Sword',          100,   50,   'A sturdy iron sword.',                    '⚔️', 'uncommon',  FALSE),
+    ('Shield',         100,   50,   'A reliable iron shield.',                 '🛡️', 'uncommon',  FALSE),
+    ('Potion',         50,    25,   'Restores your energy.',                   '🧪', 'uncommon',  TRUE),
+    ('Mystery Box',    250,   0,    'Contains a random item.',                 '📦', 'special',   TRUE),
+    ('Lucky Coin',     500,   0,    'Boosts your luck for one action.',        '🍀', 'special',   TRUE),
+    ('Dragon Egg',     1000,  500,  'A rare dragon egg.',                      '🥚', 'rare',      FALSE),
+    ('Legendary Sword',5000,  2500, 'A blade of legend.',                      '🗡️', 'legendary', FALSE)
+  ON CONFLICT (name) DO NOTHING`,
 ];
 
 async function runMigrations() {
