@@ -242,6 +242,184 @@ const migrations = [
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Polls
+  `CREATE TABLE IF NOT EXISTS polls (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message_id BIGINT,
+    question TEXT NOT NULL,
+    options JSONB NOT NULL,
+    created_by BIGINT NOT NULL,
+    ends_at TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Giveaways
+  `CREATE TABLE IF NOT EXISTS giveaways (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message_id BIGINT,
+    prize TEXT NOT NULL,
+    winners INT DEFAULT 1,
+    hosted_by BIGINT NOT NULL,
+    ends_at TIMESTAMP NOT NULL,
+    ended_at TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Suggestions
+  `CREATE TABLE IF NOT EXISTS suggestions (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    reviewed_by BIGINT,
+    review_reason TEXT,
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Starboard messages
+  `CREATE TABLE IF NOT EXISTS starboard_messages (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message_id BIGINT NOT NULL UNIQUE,
+    author_id BIGINT NOT NULL,
+    star_count INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // AFK users
+  `CREATE TABLE IF NOT EXISTS afk_users (
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    reason TEXT DEFAULT 'AFK',
+    set_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (guild_id, user_id),
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Temp voice channels
+  `CREATE TABLE IF NOT EXISTS temp_voice_channels (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    owner_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Auto responses
+  `CREATE TABLE IF NOT EXISTS auto_responses (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    trigger VARCHAR(255) NOT NULL,
+    response TEXT NOT NULL,
+    exact_match BOOLEAN DEFAULT FALSE,
+    created_by BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE,
+    UNIQUE (guild_id, trigger)
+  )`,
+
+  // Counting channel data
+  `CREATE TABLE IF NOT EXISTS counting_channel_data (
+    guild_id BIGINT PRIMARY KEY,
+    channel_id BIGINT NOT NULL,
+    current_count BIGINT DEFAULT 0,
+    high_score BIGINT DEFAULT 0,
+    last_user_id BIGINT,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Confessions
+  `CREATE TABLE IF NOT EXISTS confessions (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    reviewed_by BIGINT,
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Birthdays
+  `CREATE TABLE IF NOT EXISTS birthdays (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    birthday DATE NOT NULL,
+    year_known BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (guild_id, user_id),
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Backups
+  `CREATE TABLE IF NOT EXISTS backups (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    data JSONB NOT NULL,
+    created_by BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Sticky messages
+  `CREATE TABLE IF NOT EXISTS sticky_messages (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL UNIQUE,
+    message_id BIGINT,
+    content TEXT NOT NULL,
+    created_by BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Invite tracking
+  `CREATE TABLE IF NOT EXISTS invite_tracking (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    inviter_id BIGINT NOT NULL,
+    invite_code VARCHAR(50) NOT NULL,
+    uses INT DEFAULT 0,
+    left_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE,
+    UNIQUE (guild_id, invite_code)
+  )`,
+
+  // Disabled commands per guild
+  `CREATE TABLE IF NOT EXISTS disabled_commands (
+    guild_id BIGINT NOT NULL,
+    command_name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (guild_id, command_name),
+    FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+  )`,
+
+  // Ticket messages log
+  `CREATE TABLE IF NOT EXISTS ticket_messages (
+    id SERIAL PRIMARY KEY,
+    ticket_id INT REFERENCES tickets(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL,
+    content TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
   // Moderation: extended guild settings for anti-abuse toggles
   `ALTER TABLE guild_settings
     ADD COLUMN IF NOT EXISTS anti_spam BOOLEAN DEFAULT FALSE,
