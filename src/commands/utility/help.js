@@ -825,9 +825,49 @@ export default {
   name: 'help',
   description: 'Browse all commands by category or search for a specific command',
 
-  async execute(interaction, client) {
-    const categoryInput = interaction.options.getString('category');
-    const commandInput  = interaction.options.getString('command');
+  async execute(interaction, args, client) {
+    // ── Detect slash vs prefix ───────────────────────────────────────────────
+    // Slash commands: execute(interaction, client)
+    // Prefix commands: execute(message, args, client)
+    const isSlash = typeof interaction.isCommand === 'function' && interaction.isCommand();
+
+    // Normalise the third argument: for slash commands the second positional
+    // argument is `client`, so we reassign accordingly.
+    if (isSlash) {
+      client = args; // args holds `client` when called as a slash command
+      args = [];
+    }
+
+    let categoryInput, commandInput;
+
+    if (isSlash) {
+      categoryInput = interaction.options.getString('category');
+      commandInput  = interaction.options.getString('command');
+    } else {
+      // Prefix: first arg is category-or-command, second arg (if present) is command
+      categoryInput = args[0] ?? null;
+      commandInput  = args[1] ?? null;
+
+      // If only one arg is given, check whether it matches a command name first
+      if (categoryInput && !commandInput) {
+        const maybeCmd = findCommand(categoryInput);
+        if (maybeCmd) {
+          commandInput  = categoryInput;
+          categoryInput = null;
+        }
+      }
+    }
+
+    // Helper: send a reply that works for both slash and prefix contexts
+    const send = (payload) => {
+      if (isSlash) {
+        // Strip ephemeral for prefix (not supported), but keep it for slash
+        return interaction.reply(payload);
+      }
+      // For prefix commands, send to the channel; ignore ephemeral flag
+      const { embeds, content, components } = payload;
+      return interaction.channel.send({ embeds, content, components });
+    };
 
     // ── Command detail view ──────────────────────────────────────────────────
     if (commandInput) {
@@ -837,10 +877,10 @@ export default {
         // Try a keyword search as a fallback
         const results = searchCommands(commandInput);
         const embed = buildSearchEmbed(commandInput, results);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return send({ embeds: [embed], ephemeral: true });
       }
 
-      return interaction.reply({ embeds: [buildCommandEmbed(cmd)] });
+      return send({ embeds: [buildCommandEmbed(cmd)] });
     }
 
     // ── Category view ────────────────────────────────────────────────────────
@@ -851,7 +891,7 @@ export default {
         // Treat the input as a keyword search
         const results = searchCommands(categoryInput);
         const embed = buildSearchEmbed(categoryInput, results);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return send({ embeds: [embed], ephemeral: true });
       }
 
       const [categoryKey, meta] = found;
@@ -860,16 +900,26 @@ export default {
 
       // No pagination needed
       if (totalPages <= 1) {
-        return interaction.reply({ embeds: [embed] });
+        return send({ embeds: [embed] });
       }
 
       // Send with pagination buttons
       const row = buildPaginationRow(page, totalPages);
-      const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+
+      let reply;
+      if (isSlash) {
+        reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+      } else {
+        reply = await interaction.channel.send({ embeds: [embed], components: [row] });
+      }
+
+      const collectorFilter = isSlash
+        ? i => i.user.id === interaction.user.id
+        : i => i.user.id === interaction.author.id;
 
       const collector = reply.createMessageComponentCollector({
         componentType: ComponentType.Button,
-        filter: i => i.user.id === interaction.user.id,
+        filter: collectorFilter,
         time: 120_000, // 2 minutes
       });
 
@@ -903,6 +953,6 @@ export default {
     }
 
     // ── Main overview ────────────────────────────────────────────────────────
-    return interaction.reply({ embeds: [buildMainEmbed(client)] });
+    return send({ embeds: [buildMainEmbed(client)] });
   },
 };
