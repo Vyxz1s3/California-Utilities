@@ -242,6 +242,20 @@ const migrations = [
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Roblox verification: pending verification codes
+  `CREATE TABLE IF NOT EXISTS verification_codes (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    roblox_username VARCHAR(255),
+    roblox_user_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 hour',
+    verified BOOLEAN DEFAULT FALSE,
+    UNIQUE (guild_id, user_id)
+  )`,
+
   // Moderation: extended guild settings for anti-abuse toggles
   `ALTER TABLE guild_settings
     ADD COLUMN IF NOT EXISTS anti_spam BOOLEAN DEFAULT FALSE,
