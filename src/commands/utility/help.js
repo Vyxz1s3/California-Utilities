@@ -5,31 +5,31 @@ const CATEGORIES = {
   economy: {
     label: 'Economy',
     emoji: '💰',
-    color: '#FFD700',
+    color: 0xFFD700,
     description: 'Earn coins, gamble, shop, manage pets and businesses.',
   },
   fun: {
     label: 'Fun',
     emoji: '🎮',
-    color: '#e91e63',
+    color: 0xe91e63,
     description: 'Games, dice rolls, and entertainment.',
   },
   moderation: {
     label: 'Moderation',
     emoji: '🔨',
-    color: '#e74c3c',
+    color: 0xe74c3c,
     description: 'Ban, kick, warn, mute, purge, roles, channels, and more.',
   },
   leveling: {
     label: 'Leveling',
     emoji: '📊',
-    color: '#00FF00',
+    color: 0x00FF00,
     description: 'Check levels, XP, and server leaderboards.',
   },
   utility: {
     label: 'Utility',
     emoji: '🔧',
-    color: '#3498db',
+    color: 0x3498db,
     description: 'Server info, user info, ping, and general tools.',
   },
 };
@@ -702,7 +702,7 @@ function buildMainEmbed(client) {
   const totalCommands = COMMAND_REGISTRY.length;
 
   const embed = new EmbedBuilder()
-    .setColor('#5865F2')
+    .setColor(0x5865F2)
     .setTitle('📖 California Utilities — Help')
     .setDescription(
       'Use `/help [category]` to see all commands in a category.\n' +
@@ -753,7 +753,7 @@ function buildCommandEmbed(cmd) {
   const meta = CATEGORIES[cmd.category];
 
   const embed = new EmbedBuilder()
-    .setColor(meta?.color ?? '#5865F2')
+    .setColor(meta?.color ?? 0x5865F2)
     .setTitle(`${meta?.emoji ?? '🔧'} /${cmd.name}`)
     .addFields(
       { name: '📝 Description', value: cmd.description, inline: false },
@@ -779,7 +779,7 @@ function buildSearchEmbed(keyword, results) {
   }).join('\n');
 
   return new EmbedBuilder()
-    .setColor('#5865F2')
+    .setColor(0x5865F2)
     .setTitle(`🔍 Search results for "${keyword}"`)
     .setDescription(results.length > 0 ? lines : 'No commands matched your search.')
     .setFooter({ text: `${results.length} result${results.length !== 1 ? 's' : ''} found` })
