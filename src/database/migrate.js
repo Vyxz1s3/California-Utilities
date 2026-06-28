@@ -221,6 +221,20 @@ const migrations = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Roblox verification: pending verification codes
+  `CREATE TABLE IF NOT EXISTS roblox_verification_codes (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    roblox_username VARCHAR(255) NOT NULL,
+    roblox_user_id BIGINT NOT NULL,
+    verification_code VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    verified BOOLEAN DEFAULT FALSE,
+    UNIQUE (guild_id, user_id)
+  )`,
+
   // Roblox verification: per-user verification records
   `CREATE TABLE IF NOT EXISTS roblox_verifications (
     id SERIAL PRIMARY KEY,
