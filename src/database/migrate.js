@@ -188,6 +188,49 @@ const migrations = [
     PRIMARY KEY (user_id, command)
   )`,
 
+  // Moderation: per-user warnings log
+  `CREATE TABLE IF NOT EXISTS user_warnings (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    moderator_id BIGINT NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Moderation: punishment appeals
+  `CREATE TABLE IF NOT EXISTS appeals (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    reviewed_by BIGINT,
+    review_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP
+  )`,
+
+  // Moderation: member notes
+  `CREATE TABLE IF NOT EXISTS member_notes (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    moderator_id BIGINT NOT NULL,
+    note TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Moderation: extended guild settings for anti-abuse toggles
+  `ALTER TABLE guild_settings
+    ADD COLUMN IF NOT EXISTS anti_spam BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS anti_link BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS anti_raid BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS anti_nuke BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS spam_threshold INT DEFAULT 5,
+    ADD COLUMN IF NOT EXISTS raid_threshold INT DEFAULT 10
+  `,
+
   // Seed default shop items (idempotent)
   `INSERT INTO economy_items (name, price, sell_price, description, emoji, rarity, usable) VALUES
     ('Apple',          10,    5,    'A fresh apple.',                          '🍎', 'common',    FALSE),
@@ -203,21 +246,25 @@ const migrations = [
   ON CONFLICT (name) DO NOTHING`,
 ];
 
-async function runMigrations() {
+export async function runMigrations() {
   try {
     console.log('🔄 Running database migrations...');
-    
+
     for (const migration of migrations) {
       await pool.query(migration);
     }
-    
+
     console.log('✅ All migrations completed successfully');
-    process.exit(0);
   } catch (err) {
     console.error('❌ Migration failed:', err);
-    process.exit(1);
+    throw err;
   }
 }
 
-runMigrations();
+// Allow running directly: node src/database/migrate.js
+if (process.argv[1] && process.argv[1].endsWith('migrate.js')) {
+  runMigrations()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
 
