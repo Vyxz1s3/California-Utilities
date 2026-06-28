@@ -221,6 +221,27 @@ const migrations = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Roblox verification: per-user verification records
+  `CREATE TABLE IF NOT EXISTS roblox_verifications (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    roblox_username VARCHAR(255) NOT NULL,
+    roblox_user_id BIGINT,
+    verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (guild_id, user_id)
+  )`,
+
+  // Roblox verification: per-guild configuration
+  `CREATE TABLE IF NOT EXISTS guild_verification_settings (
+    guild_id BIGINT PRIMARY KEY,
+    verified_role_id BIGINT,
+    unverified_role_id BIGINT,
+    verification_channel_id BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+
   // Moderation: extended guild settings for anti-abuse toggles
   `ALTER TABLE guild_settings
     ADD COLUMN IF NOT EXISTS anti_spam BOOLEAN DEFAULT FALSE,

@@ -652,6 +652,19 @@ const COMMAND_REGISTRY = [
     usage: '/help [category] [command]',
     category: 'utility',
   },
+  {
+    name: 'verify setup',
+    description: 'Configure the Roblox verification system (verified/unverified roles, channel).',
+    usage: '/verify setup',
+    category: 'utility',
+    extra: 'Requires: Manage Server',
+  },
+  {
+    name: 'verify user',
+    description: 'Verify your Roblox account and receive the verified role.',
+    usage: '/verify user <roblox_username>',
+    category: 'utility',
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
