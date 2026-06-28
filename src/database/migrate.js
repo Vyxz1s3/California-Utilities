@@ -242,6 +242,29 @@ const migrations = [
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Verification: embed message tracking (so the bot can re-find posted embeds)
+  `CREATE TABLE IF NOT EXISTS verification_embeds (
+    id SERIAL PRIMARY KEY,
+    guild_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    message_id BIGINT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    color INT,
+    created_by BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (guild_id, message_id)
+  )`,
+
+  // Verification: per-user attempt tracking (rate-limiting)
+  `CREATE TABLE IF NOT EXISTS user_verification_attempts (
+    guild_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    attempts INT DEFAULT 0,
+    last_attempt_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (guild_id, user_id)
+  )`,
+
   // Moderation: extended guild settings for anti-abuse toggles
   `ALTER TABLE guild_settings
     ADD COLUMN IF NOT EXISTS anti_spam BOOLEAN DEFAULT FALSE,
