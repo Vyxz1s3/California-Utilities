@@ -9,9 +9,23 @@ import {
   ChannelSelectMenuBuilder,
   ChannelType,
   ComponentType,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } from 'discord.js';
 import { query } from '../../database/db.js';
 import { getRobloxUser } from '../../utils/robloxApi.js';
+import { getRandomCaptcha, validateCaptcha } from '../../utils/captcha.js';
+import {
+  getVerificationSettings as _getVerificationSettings,
+  getAttemptRecord,
+  performVerification,
+  checkAttemptLimit,
+  incrementAttempts,
+  resetAttempts,
+  buildVerificationEmbed,
+  buildSuccessEmbed,
+} from '../../utils/verification.js';
 
 // ─── Database helpers ─────────────────────────────────────────────────────────
 
@@ -208,6 +222,29 @@ export default {
             .setName('username')
             .setDescription('Your exact Roblox username')
             .setRequired(true)
+        )
+    )
+    .addSubcommand(sub =>
+      sub
+        .setName('embed')
+        .setDescription('Post a verification embed with a button that members click to verify (admin only)')
+        .addStringOption(opt =>
+          opt
+            .setName('title')
+            .setDescription('Embed title (default: 🎮 Roblox Verification)')
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('description')
+            .setDescription('Embed description (leave blank for default text)')
+            .setRequired(false)
+        )
+        .addStringOption(opt =>
+          opt
+            .setName('color')
+            .setDescription('Embed color as a hex code, e.g. #5865F2 (default: blurple)')
+            .setRequired(false)
         )
     ),
 
@@ -498,5 +535,212 @@ export default {
 
       return interaction.editReply({ embeds: [successEmbed] });
     }
+
+    // ── /verify embed ─────────────────────────────────────────────────────────
+    if (sub === 'embed') {
+      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+        return interaction.reply({
+          content: '❌ You need the **Manage Server** permission to post a verification embed.',
+          ephemeral: true,
+        });
+      }
+
+      const titleOpt       = interaction.options.getString('title')       ?? null;
+      const descriptionOpt = interaction.options.getString('description') ?? null;
+      const colorOpt       = interaction.options.getString('color')       ?? null;
+
+      // Parse hex color string → integer
+      let colorInt = 0x5865f2;
+      if (colorOpt) {
+        const hex = colorOpt.replace('#', '');
+        const parsed = parseInt(hex, 16);
+        if (!isNaN(parsed)) colorInt = parsed;
+      }
+
+      const embed = buildVerificationEmbed({
+        title:       titleOpt,
+        description: descriptionOpt,
+        color:       colorInt,
+      });
+
+      const startButton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('verify_embed_start')
+          .setLabel('Start Verification')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('🎮')
+      );
+
+      // Post the embed in the current channel
+      const posted = await interaction.channel.send({
+        embeds: [embed],
+        components: [startButton],
+      });
+
+      // Persist the embed record so we can reference it later
+      await query(
+        `INSERT INTO verification_embeds
+           (guild_id, channel_id, message_id, title, description, color, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (guild_id, message_id) DO NOTHING`,
+        [
+          interaction.guild.id,
+          interaction.channel.id,
+          posted.id,
+          titleOpt,
+          descriptionOpt,
+          colorInt,
+          interaction.user.id,
+        ]
+      );
+
+      return interaction.reply({
+        content: `✅ Verification embed posted in <#${interaction.channel.id}>.`,
+        ephemeral: true,
+      });
+    }
   },
 };
+
+// ─── Persistent component handler ─────────────────────────────────────────────
+// Called by interactionCreate for button/modal interactions whose customId
+// starts with 'verify_embed_'.
+
+/**
+ * In-memory CAPTCHA store: maps `${guildId}:${userId}` → { answer, expiresAt }
+ * This avoids a DB round-trip for the short-lived CAPTCHA session.
+ */
+const pendingCaptchas = new Map();
+
+/**
+ * Handle button presses and modal submissions originating from a
+ * /verify embed posted message.
+ *
+ * @param {import('discord.js').Interaction} interaction
+ */
+export async function handleVerifyEmbedInteraction(interaction) {
+  const guildId = interaction.guild?.id;
+  const userId  = interaction.user.id;
+
+  // ── Button: "Start Verification" ──────────────────────────────────────────
+  if (interaction.isButton() && interaction.customId === 'verify_embed_start') {
+    // Rate-limit check
+    const limit = await checkAttemptLimit(guildId, userId);
+    if (limit.limited) {
+      const minutes = Math.ceil(limit.retryAfterMs / 60_000);
+      return interaction.reply({
+        content: `⏱️ You've used all your verification attempts. Please wait **${minutes} minute(s)** before trying again.`,
+        ephemeral: true,
+      });
+    }
+
+    // Pick a CAPTCHA question and store it temporarily
+    const captcha = getRandomCaptcha();
+    const key = `${guildId}:${userId}`;
+    pendingCaptchas.set(key, {
+      answer:    captcha.answer,
+      expiresAt: Date.now() + 5 * 60_000, // 5-minute window to submit
+    });
+
+    // Build and show the modal
+    const modal = new ModalBuilder()
+      .setCustomId('verify_embed_modal')
+      .setTitle('Roblox Verification');
+
+    const usernameInput = new TextInputBuilder()
+      .setCustomId('verify_roblox_username')
+      .setLabel('Your Roblox Username')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g. Builderman')
+      .setRequired(true)
+      .setMinLength(3)
+      .setMaxLength(20);
+
+    const captchaInput = new TextInputBuilder()
+      .setCustomId('verify_captcha_answer')
+      .setLabel(captcha.question)
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Type your answer here')
+      .setRequired(true)
+      .setMaxLength(10);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(usernameInput),
+      new ActionRowBuilder().addComponents(captchaInput),
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  // ── Modal submit: verification form ───────────────────────────────────────
+  if (interaction.isModalSubmit() && interaction.customId === 'verify_embed_modal') {
+    await interaction.deferReply({ ephemeral: true });
+
+    const key           = `${guildId}:${userId}`;
+    const captchaRecord = pendingCaptchas.get(key);
+
+    // Validate CAPTCHA session
+    if (!captchaRecord || Date.now() > captchaRecord.expiresAt) {
+      pendingCaptchas.delete(key);
+      return interaction.editReply({
+        content: '⏱️ Your verification session expired. Please click **Start Verification** again.',
+      });
+    }
+
+    const robloxUsername = interaction.fields.getTextInputValue('verify_roblox_username').trim();
+    const userAnswer     = interaction.fields.getTextInputValue('verify_captcha_answer').trim();
+
+    // Validate CAPTCHA answer
+    if (!validateCaptcha(userAnswer, captchaRecord.answer)) {
+      pendingCaptchas.delete(key);
+      await incrementAttempts(guildId, userId);
+
+      const record = await getAttemptRecord(guildId, userId).catch(() => null);
+
+      const attemptsLeft = Math.max(0, 3 - (record?.attempts ?? 3));
+
+      return interaction.editReply({
+        content:
+          `❌ Incorrect CAPTCHA answer. ` +
+          (attemptsLeft > 0
+            ? `You have **${attemptsLeft}** attempt(s) remaining.`
+            : 'You have no attempts remaining. Please wait 10 minutes before trying again.'),
+      });
+    }
+
+    // CAPTCHA passed — clean up session
+    pendingCaptchas.delete(key);
+
+    // Fetch guild settings
+    const settings = await _getVerificationSettings(guildId);
+
+    // Enforce verification channel restriction
+    if (settings?.verification_channel_id) {
+      const allowedId = String(settings.verification_channel_id);
+      if (interaction.channel.id !== allowedId) {
+        return interaction.editReply({
+          content: `❌ Please use <#${allowedId}> to verify your Roblox account.`,
+        });
+      }
+    }
+
+    // Perform the full verification
+    const result = await performVerification(interaction.member, robloxUsername, settings);
+
+    if (!result.success) {
+      await incrementAttempts(guildId, userId);
+
+      return interaction.editReply({
+        content:
+          `❌ Could not find a Roblox account with the username **${robloxUsername}**.\n\n` +
+          'Please double-check your username (not your display name) and try again.',
+      });
+    }
+
+    // Success — reset attempt counter
+    await resetAttempts(guildId, userId);
+
+    const successEmbed = buildSuccessEmbed(result.robloxUser, settings, result.rolesChanged);
+    return interaction.editReply({ embeds: [successEmbed] });
+  }
+}

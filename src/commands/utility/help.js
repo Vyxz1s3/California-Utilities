@@ -665,7 +665,15 @@ const COMMAND_REGISTRY = [
     usage: '/verify user <roblox_username>',
     category: 'utility',
   },
+  {
+    name: 'verify embed',
+    description: 'Post a verification embed with a Start Verification button and CAPTCHA modal.',
+    usage: '/verify embed [title] [description] [color]',
+    category: 'utility',
+    extra: 'Requires: Manage Server • Members click the button, complete a CAPTCHA, and are verified automatically',
+  },
 ];
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

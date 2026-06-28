@@ -1,9 +1,31 @@
 import { checkCooldown } from '../utils/cooldown.js';
 import { getOrCreateGuild } from '../utils/helpers.js';
+import { handleVerifyEmbedInteraction } from '../commands/utility/verify.js';
 
 export default {
   name: 'interactionCreate',
   async execute(client, interaction) {
+    // ── Persistent verify-embed button / modal interactions ──────────────────
+    const isVerifyEmbedInteraction =
+      (interaction.isButton() || interaction.isModalSubmit()) &&
+      (interaction.customId === 'verify_embed_start' ||
+       interaction.customId === 'verify_embed_modal');
+
+    if (isVerifyEmbedInteraction) {
+      try {
+        await handleVerifyEmbedInteraction(interaction);
+      } catch (err) {
+        console.error('[verify-embed] Error handling interaction:', err);
+        const reply = { content: '❌ An error occurred during verification. Please try again.', ephemeral: true };
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(reply).catch(() => {});
+        } else {
+          await interaction.reply(reply).catch(() => {});
+        }
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.slashCommands.get(interaction.commandName);
