@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
 import { initializeDatabase } from './database/db.js';
+import { runMigrations } from './database/migrate.js';
 import { loadCommands } from './utils/commandLoader.js';
 import { loadEvents } from './utils/eventLoader.js';
 
@@ -32,11 +33,12 @@ client.slashCommands = new Collection();
 client.cooldowns = new Collection();
 client.events = new Collection();
 
-// Initialize database (non-blocking — bot starts even if DB isn't ready yet)
+// Initialize database and run migrations
 try {
   await initializeDatabase();
+  await runMigrations();
 } catch (err) {
-  console.warn('⚠️ Database initialization skipped:', err.message);
+  console.warn('⚠️ Database initialization/migration skipped:', err.message);
 }
 
 // Load commands and events
