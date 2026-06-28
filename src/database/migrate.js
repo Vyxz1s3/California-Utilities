@@ -228,9 +228,22 @@ const migrations = [
     user_id BIGINT NOT NULL,
     roblox_username VARCHAR(255) NOT NULL,
     roblox_user_id BIGINT,
-    verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verification_code VARCHAR(10),
+    code_expires_at TIMESTAMP,
+    verified_at TIMESTAMP,
     UNIQUE (guild_id, user_id)
   )`,
+
+  // Add code columns to existing roblox_verifications tables (idempotent)
+  `ALTER TABLE roblox_verifications
+    ADD COLUMN IF NOT EXISTS verification_code VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS code_expires_at TIMESTAMP
+  `,
+
+  // Allow verified_at to be NULL (pending verifications have no verified_at yet)
+  `ALTER TABLE roblox_verifications
+    ALTER COLUMN verified_at DROP NOT NULL
+  `,
 
   // Roblox verification: per-guild configuration
   `CREATE TABLE IF NOT EXISTS guild_verification_settings (
