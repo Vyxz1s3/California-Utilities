@@ -11,7 +11,7 @@ import {
   ComponentType,
 } from 'discord.js';
 import { query } from '../../database/db.js';
-import { getRobloxUser } from '../../utils/robloxApi.js';
+import { getRobloxUser, verifyCodeInProfile } from '../../utils/robloxApi.js';
 
 // ─── Database helpers ─────────────────────────────────────────────────────────
 
@@ -35,15 +35,56 @@ async function upsertVerificationSetting(guildId, column, value) {
   );
 }
 
-/** Store or update a user's Roblox verification record. */
-async function upsertRobloxVerification(guildId, userId, robloxUsername, robloxUserId) {
-  await query(
-    `INSERT INTO roblox_verifications (guild_id, user_id, roblox_username, roblox_user_id, verified_at)
-     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-     ON CONFLICT (guild_id, user_id) DO UPDATE
-       SET roblox_username = $3, roblox_user_id = $4, verified_at = CURRENT_TIMESTAMP`,
-    [guildId, userId, robloxUsername, robloxUserId]
+/** Fetch a pending or completed verification record for a user in a guild. */
+async function getVerificationRecord(guildId, userId) {
+  const result = await query(
+    'SELECT * FROM roblox_verifications WHERE guild_id = $1 AND user_id = $2',
+    [guildId, userId]
   );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * Store a pending verification (code + expiry, no verified_at yet).
+ * Overwrites any existing record so the user can restart the flow.
+ */
+async function upsertPendingVerification(guildId, userId, robloxUsername, robloxUserId, code, expiresAt) {
+  await query(
+    `INSERT INTO roblox_verifications
+       (guild_id, user_id, roblox_username, roblox_user_id, verification_code, code_expires_at, verified_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NULL)
+     ON CONFLICT (guild_id, user_id) DO UPDATE
+       SET roblox_username     = $3,
+           roblox_user_id      = $4,
+           verification_code   = $5,
+           code_expires_at     = $6,
+           verified_at         = NULL`,
+    [guildId, userId, robloxUsername, robloxUserId, code, expiresAt]
+  );
+}
+
+/** Mark an existing pending record as fully verified. */
+async function markVerified(guildId, userId) {
+  await query(
+    `UPDATE roblox_verifications
+        SET verified_at = CURRENT_TIMESTAMP,
+            verification_code = NULL,
+            code_expires_at   = NULL
+      WHERE guild_id = $1 AND user_id = $2`,
+    [guildId, userId]
+  );
+}
+
+// ─── Code generation ──────────────────────────────────────────────────────────
+
+/** Generate a human-readable verification code like "VERIFY-AB12CD". */
+function generateVerificationCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
+  let suffix = '';
+  for (let i = 0; i < 6; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `VERIFY-${suffix}`;
 }
 
 // ─── Embed builders ───────────────────────────────────────────────────────────
@@ -170,8 +211,9 @@ function buildInstructionsEmbed() {
       {
         name: 'Step 4 — Members verify themselves',
         value:
-          'Members run `/verify <roblox_username>` with their exact Roblox username. ' +
-          'The bot checks the Roblox API to confirm the account exists, then assigns roles automatically.',
+          '**Step 1:** Members run `/verify start <roblox_username>` to receive a unique code.\n' +
+          '**Step 2:** They paste the code into their Roblox **About** section and save.\n' +
+          '**Step 3:** They run `/verify confirm <roblox_username>` — the bot checks their bio and assigns roles.',
         inline: false,
       },
       {
@@ -201,12 +243,23 @@ export default {
     )
     .addSubcommand(sub =>
       sub
-        .setName('user')
-        .setDescription('Verify your Roblox account and receive the verified role')
+        .setName('start')
+        .setDescription('Begin verifying your Roblox account — get a code to place in your bio')
         .addStringOption(opt =>
           opt
             .setName('username')
             .setDescription('Your exact Roblox username')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(sub =>
+      sub
+        .setName('confirm')
+        .setDescription('Confirm verification after placing the code in your Roblox bio')
+        .addStringOption(opt =>
+          opt
+            .setName('username')
+            .setDescription('Your exact Roblox username (same as in /verify start)')
             .setRequired(true)
         )
     ),
@@ -406,9 +459,8 @@ export default {
 
       return;
     }
-
-    // ── /verify user ─────────────────────────────────────────────────────────
-    if (sub === 'user') {
+    // ── /verify start ─────────────────────────────────────────────────────────
+    if (sub === 'start') {
       await interaction.deferReply({ ephemeral: true });
 
       const username = interaction.options.getString('username').trim();
@@ -424,25 +476,224 @@ export default {
         }
       }
 
-      // Validate username via Roblox API
-      const robloxUser = await getRobloxUser(username);
-
-      if (!robloxUser) {
-        const errorEmbed = new EmbedBuilder()
-          .setColor(0xe74c3c)
-          .setTitle('❌ Roblox Username Not Found')
-          .setDescription(
-            `Could not find a Roblox account with the username **${username}**.\n\n` +
-            'Please double-check your username and try again. Make sure you\'re using your ' +
-            '**exact** Roblox username (not your display name).'
-          )
-          .setFooter({ text: 'Banned Roblox accounts are not accepted.' })
-          .setTimestamp();
-
-        return interaction.editReply({ embeds: [errorEmbed] });
+      // Check if already verified
+      const existing = await getVerificationRecord(interaction.guild.id, interaction.user.id);
+      if (existing?.verified_at) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xf39c12)
+              .setTitle('⚠️ Already Verified')
+              .setDescription(
+                `You're already verified as **${existing.roblox_username}** in this server.\n\n` +
+                'If you need to re-verify with a different account, please contact an admin.'
+              )
+              .setTimestamp(),
+          ],
+        });
       }
 
-      // Assign verified role
+      // Validate username via Roblox API
+      const robloxUser = await getRobloxUser(username);
+      if (!robloxUser) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('❌ Roblox Username Not Found')
+              .setDescription(
+                `Could not find a Roblox account with the username **${username}**.\n\n` +
+                "Please double-check your username and try again. Make sure you're using your " +
+                '**exact** Roblox username (not your display name).'
+              )
+              .setFooter({ text: 'Banned Roblox accounts are not accepted.' })
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Generate code and store pending verification (10-minute expiry)
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await upsertPendingVerification(
+        interaction.guild.id,
+        interaction.user.id,
+        robloxUser.name,
+        robloxUser.id,
+        code,
+        expiresAt
+      );
+
+      const startEmbed = new EmbedBuilder()
+        .setColor(0x5865f2)
+        .setTitle('🎮 Roblox Verification — Step 1 of 2')
+        .setDescription(
+          `A verification code has been generated for **${robloxUser.name}**.\n\n` +
+          'To prove you own this account, place the code below in your Roblox **About** section, ' +
+          'then run `/verify confirm` with the same username.'
+        )
+        .addFields(
+          {
+            name: '🔑 Your Verification Code',
+            value: `\`\`\`${code}\`\`\``,
+            inline: false,
+          },
+          {
+            name: '📋 Instructions',
+            value:
+              '1. Go to **[roblox.com](https://www.roblox.com)** and sign in.\n' +
+              '2. Click your avatar → **Profile**.\n' +
+              '3. Click the ✏️ pencil icon next to your **About** section.\n' +
+              `4. Paste \`${code}\` anywhere in the text box.\n` +
+              `5. Save, then run \`/verify confirm\` with username \`${robloxUser.name}\` here.`,
+            inline: false,
+          },
+          {
+            name: '⏱️ Expires',
+            value: `<t:${Math.floor(expiresAt.getTime() / 1000)}:R> — you have 10 minutes.`,
+            inline: false,
+          }
+        )
+        .setFooter({ text: 'You can remove the code from your bio after verification is complete.' })
+        .setTimestamp();
+
+      const confirmButton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`verify_confirm_${interaction.user.id}`)
+          .setLabel("I've added the code — run /verify confirm to finish")
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('✅')
+          .setDisabled(true) // informational only; user must run the slash command
+      );
+
+      return interaction.editReply({ embeds: [startEmbed], components: [confirmButton] });
+    }
+
+    // ── /verify confirm ───────────────────────────────────────────────────────
+    if (sub === 'confirm') {
+      await interaction.deferReply({ ephemeral: true });
+
+      const username = interaction.options.getString('username').trim();
+      const settings = await getVerificationSettings(interaction.guild.id);
+
+      // Enforce verification channel restriction
+      if (settings?.verification_channel_id) {
+        const allowedChannelId = String(settings.verification_channel_id);
+        if (interaction.channel.id !== allowedChannelId) {
+          return interaction.editReply({
+            content: `❌ Please use <#${allowedChannelId}> to verify your Roblox account.`,
+          });
+        }
+      }
+
+      // Fetch the user's verification record
+      const record = await getVerificationRecord(interaction.guild.id, interaction.user.id);
+
+      // Already fully verified
+      if (record?.verified_at) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xf39c12)
+              .setTitle('⚠️ Already Verified')
+              .setDescription(
+                `You're already verified as **${record.roblox_username}** in this server.`
+              )
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Must have started verification first
+      if (!record?.verification_code) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('❌ No Pending Verification')
+              .setDescription(
+                "You don't have an active verification code. Run `/verify start` first to get one."
+              )
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Check expiry
+      if (record.code_expires_at && new Date() > new Date(record.code_expires_at)) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('⏱️ Code Expired')
+              .setDescription(
+                'Your verification code has expired. Run `/verify start` again to get a new one.'
+              )
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Validate the username matches what was started
+      const normalizedInput    = username.toLowerCase();
+      const normalizedRecorded = record.roblox_username.toLowerCase();
+      if (normalizedInput !== normalizedRecorded) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('❌ Username Mismatch')
+              .setDescription(
+                `You started verification for **${record.roblox_username}**, but provided **${username}**.\n\n` +
+                `Please run \`/verify confirm\` with username \`${record.roblox_username}\` to complete verification.`
+              )
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Fetch Roblox profile and check for the code in the bio
+      let codeFound = false;
+      try {
+        codeFound = await verifyCodeInProfile(record.roblox_user_id, record.verification_code);
+      } catch {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('❌ Roblox API Error')
+              .setDescription(
+                'Could not reach Roblox to check your profile. Please try again in a moment.'
+              )
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      if (!codeFound) {
+        return interaction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xe74c3c)
+              .setTitle('❌ Code Not Found in Bio')
+              .setDescription(
+                `The code \`${record.verification_code}\` was not found in the **About** section ` +
+                `of the Roblox profile **${record.roblox_username}**.\n\n` +
+                '**Make sure you:**\n' +
+                '• Pasted the code exactly as shown (copy-paste is safest).\n' +
+                '• Saved your profile after editing.\n' +
+                '• Are editing the correct Roblox account.\n\n' +
+                'Once the code is visible on your profile, run `/verify confirm` again.'
+              )
+              .setFooter({ text: 'Your code is still valid — no need to restart.' })
+              .setTimestamp(),
+          ],
+        });
+      }
+
+      // Code found — mark as verified and assign roles
+      await markVerified(interaction.guild.id, interaction.user.id);
+
       const member = interaction.member;
       let rolesChanged = false;
 
@@ -453,12 +704,11 @@ export default {
             await member.roles.add(verifiedRole, 'Roblox verification');
             rolesChanged = true;
           } catch {
-            // Bot may lack permissions — we still store the verification and inform the user
+            // Bot may lack permissions — verification is still recorded
           }
         }
       }
 
-      // Remove unverified role
       if (settings?.unverified_role_id) {
         const unverifiedRole = interaction.guild.roles.cache.get(String(settings.unverified_role_id));
         if (unverifiedRole && member.roles.cache.has(unverifiedRole.id)) {
@@ -466,23 +716,15 @@ export default {
         }
       }
 
-      // Persist verification to database
-      await upsertRobloxVerification(
-        interaction.guild.id,
-        interaction.user.id,
-        robloxUser.name,
-        robloxUser.id
-      );
-
       const successEmbed = new EmbedBuilder()
         .setColor(0x2ecc71)
         .setTitle('✅ Verification Successful!')
         .setDescription(
-          `You've been verified as **${robloxUser.name}** on Roblox. Welcome to the server!`
+          `You've been verified as **${record.roblox_username}** on Roblox. Welcome to the server!`
         )
         .addFields(
-          { name: '🎮 Roblox Username', value: robloxUser.name, inline: true },
-          { name: '🆔 Roblox User ID', value: String(robloxUser.id), inline: true },
+          { name: '🎮 Roblox Username', value: record.roblox_username, inline: true },
+          { name: '🆔 Roblox User ID',  value: String(record.roblox_user_id), inline: true },
           {
             name: '🎭 Role',
             value: rolesChanged && settings?.verified_role_id
@@ -491,12 +733,17 @@ export default {
                 ? '⚠️ Role could not be assigned — check bot permissions.'
                 : 'No verified role is configured yet. Ask an admin to run `/verify setup`.',
             inline: false,
+          },
+          {
+            name: '💡 Tip',
+            value: 'You can now remove the verification code from your Roblox bio.',
+            inline: false,
           }
         )
-        .setFooter({ text: 'Your Roblox account is now linked to your Discord profile.' })
+        .setFooter({ text: 'Your Roblox account is now securely linked to your Discord profile.' })
         .setTimestamp();
 
-      return interaction.editReply({ embeds: [successEmbed] });
+      return interaction.editReply({ embeds: [successEmbed], components: [] });
     }
   },
 };
