@@ -23,6 +23,8 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildInvites,
   ],
 });
 
@@ -32,6 +34,10 @@ client.prefixCommands = new Collection();
 client.slashCommands = new Collection();
 client.cooldowns = new Collection();
 client.events = new Collection();
+
+// Snipe caches (in-memory, keyed by channel ID)
+client.snipeCache = new Map();
+client.editSnipeCache = new Map();
 
 // Initialize database and run migrations
 try {

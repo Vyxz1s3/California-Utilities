@@ -12,7 +12,13 @@ const CATEGORIES = {
     label: 'Fun',
     emoji: '🎮',
     color: 0xe91e63,
-    description: 'Games, dice rolls, and entertainment.',
+    description: 'Games, trivia, memes, jokes, and entertainment.',
+  },
+  music: {
+    label: 'Music',
+    emoji: '🎵',
+    color: 0x1DB954,
+    description: 'Play, pause, skip, queue, and manage music.',
   },
   moderation: {
     label: 'Moderation',
@@ -30,7 +36,127 @@ const CATEGORIES = {
     label: 'Utility',
     emoji: '🔧',
     color: 0x3498db,
-    description: 'Server info, user info, ping, and general tools.',
+    description: 'Avatar, banner, weather, calculator, QR codes, and more.',
+  },
+  tickets: {
+    label: 'Tickets',
+    emoji: '🎫',
+    color: 0x2ECC71,
+    description: 'Create and manage support tickets.',
+  },
+  roles: {
+    label: 'Reaction Roles',
+    emoji: '🎭',
+    color: 0x9B59B6,
+    description: 'Set up and manage reaction roles.',
+  },
+  giveaways: {
+    label: 'Polls & Giveaways',
+    emoji: '🎉',
+    color: 0xFFD700,
+    description: 'Create polls and run giveaways.',
+  },
+  reminders: {
+    label: 'Reminders',
+    emoji: '⏰',
+    color: 0xF39C12,
+    description: 'Set, view, and manage personal reminders.',
+  },
+  suggestions: {
+    label: 'Suggestions',
+    emoji: '💡',
+    color: 0x5865F2,
+    description: 'Submit and manage server suggestions.',
+  },
+  starboard: {
+    label: 'Starboard',
+    emoji: '⭐',
+    color: 0xFFD700,
+    description: 'Star messages and view the starboard.',
+  },
+  afk: {
+    label: 'AFK',
+    emoji: '💤',
+    color: 0xF39C12,
+    description: 'Set and manage AFK status.',
+  },
+  voice: {
+    label: 'Temp Voice',
+    emoji: '🎙️',
+    color: 0x9B59B6,
+    description: 'Create and manage temporary voice channels.',
+  },
+  auto: {
+    label: 'Auto Responses',
+    emoji: '🤖',
+    color: 0x3498DB,
+    description: 'Set up automatic message responses.',
+  },
+  counting: {
+    label: 'Counting',
+    emoji: '🔢',
+    color: 0x5865F2,
+    description: 'Set up and manage a counting channel.',
+  },
+  confessions: {
+    label: 'Confessions',
+    emoji: '🤫',
+    color: 0x9B59B6,
+    description: 'Submit and manage anonymous confessions.',
+  },
+  birthdays: {
+    label: 'Birthdays',
+    emoji: '🎂',
+    color: 0xFF69B4,
+    description: 'Set birthdays and get announcements.',
+  },
+  embeds: {
+    label: 'Embed Builder',
+    emoji: '🖼️',
+    color: 0x5865F2,
+    description: 'Create, edit, and send custom embeds.',
+  },
+  backups: {
+    label: 'Backups',
+    emoji: '📦',
+    color: 0x2ECC71,
+    description: 'Create and restore server configuration backups.',
+  },
+  sniping: {
+    label: 'Message Sniping',
+    emoji: '🔍',
+    color: 0xE74C3C,
+    description: 'Snipe deleted and edited messages.',
+  },
+  sticky: {
+    label: 'Sticky Messages',
+    emoji: '📌',
+    color: 0xF39C12,
+    description: 'Pin sticky messages to channels.',
+  },
+  invites: {
+    label: 'Invite Tracking',
+    emoji: '📨',
+    color: 0x5865F2,
+    description: 'Track and manage server invites.',
+  },
+  welcome: {
+    label: 'Welcome & Goodbye',
+    emoji: '👋',
+    color: 0x2ECC71,
+    description: 'Configure welcome and goodbye messages.',
+  },
+  logging: {
+    label: 'Logging',
+    emoji: '📋',
+    color: 0x5865F2,
+    description: 'View and configure server logs.',
+  },
+  admin: {
+    label: 'Administration',
+    emoji: '⚙️',
+    color: 0xE74C3C,
+    description: 'Server settings, prefix, language, and command management.',
   },
 };
 
@@ -295,6 +421,46 @@ const COMMAND_REGISTRY = [
     usage: '/8ball <question>',
     category: 'fun',
   },
+  { name: 'meme', description: 'Get a random meme.', usage: '/meme', category: 'fun' },
+  { name: 'joke', description: 'Get a random joke.', usage: '/joke', category: 'fun' },
+  { name: 'rps', description: 'Play rock paper scissors against the bot.', usage: '/rps <choice>', category: 'fun' },
+  { name: 'tictactoe', description: 'Play tic tac toe against the bot.', usage: '/tictactoe', category: 'fun' },
+  { name: 'connect4', description: 'Play Connect Four against the bot.', usage: '/connect4', category: 'fun' },
+  { name: 'trivia', description: 'Answer a random trivia question.', usage: '/trivia', category: 'fun' },
+  { name: 'hangman', description: 'Play a game of hangman.', usage: '/hangman', category: 'fun' },
+  { name: 'minesweeper', description: 'Generate a minesweeper board.', usage: '/minesweeper [difficulty]', category: 'fun' },
+  { name: 'guess-number', description: 'Guess the number the bot is thinking of.', usage: '/guess-number <guess>', category: 'fun' },
+  { name: 'higher-lower', description: 'Play higher or lower.', usage: '/higher-lower', category: 'fun' },
+  { name: 'would-you-rather', description: 'Get a would you rather question.', usage: '/would-you-rather', category: 'fun' },
+  { name: 'truth-or-dare', description: 'Get a truth or dare prompt.', usage: '/truth-or-dare <type>', category: 'fun' },
+  { name: 'quote', description: 'Get a random inspirational quote.', usage: '/quote', category: 'fun' },
+  { name: 'fact', description: 'Get a random interesting fact.', usage: '/fact', category: 'fun' },
+  { name: 'pickup-line', description: 'Get a random pickup line.', usage: '/pickup-line', category: 'fun' },
+  { name: 'roast', description: 'Roast a user (all in good fun!).', usage: '/roast [user]', category: 'fun' },
+  { name: 'compliment', description: 'Compliment a user.', usage: '/compliment [user]', category: 'fun' },
+  { name: 'gif', description: 'Search for a GIF by keyword.', usage: '/gif <query>', category: 'fun' },
+  { name: 'image', description: 'Search for an image by keyword.', usage: '/image <query>', category: 'fun' },
+  { name: 'meme-search', description: 'Search for a meme template.', usage: '/meme-search <template>', category: 'fun' },
+
+  // ── Music ─────────────────────────────────────────────────────────────────
+  { name: 'play', description: 'Play a song in your voice channel.', usage: '/play <query>', category: 'music' },
+  { name: 'pause', description: 'Pause the currently playing song.', usage: '/pause', category: 'music' },
+  { name: 'resume', description: 'Resume the paused song.', usage: '/resume', category: 'music' },
+  { name: 'stop', description: 'Stop music and clear the queue.', usage: '/stop', category: 'music' },
+  { name: 'skip', description: 'Skip the current song.', usage: '/skip [amount]', category: 'music' },
+  { name: 'previous', description: 'Play the previous song.', usage: '/previous', category: 'music' },
+  { name: 'seek', description: 'Seek to a specific time in the current song.', usage: '/seek <time>', category: 'music' },
+  { name: 'volume', description: 'Set the music volume.', usage: '/volume <level>', category: 'music' },
+  { name: 'loop', description: 'Set the loop mode.', usage: '/loop <mode>', category: 'music' },
+  { name: 'shuffle', description: 'Shuffle the music queue.', usage: '/shuffle', category: 'music' },
+  { name: 'queue', description: 'View the current music queue.', usage: '/queue', category: 'music' },
+  { name: 'queue-clear', description: 'Clear the music queue.', usage: '/queue-clear', category: 'music' },
+  { name: 'queue-remove', description: 'Remove a song from the queue.', usage: '/queue-remove <position>', category: 'music' },
+  { name: 'queue-move', description: 'Move a song in the queue.', usage: '/queue-move <from> <to>', category: 'music' },
+  { name: 'now-playing', description: 'Show the currently playing song.', usage: '/now-playing', category: 'music' },
+  { name: 'lyrics', description: 'Get lyrics for a song.', usage: '/lyrics [song]', category: 'music' },
+  { name: 'search', description: 'Search for songs to add to the queue.', usage: '/search <query>', category: 'music' },
+  { name: 'playlist', description: 'Manage your playlists.', usage: '/playlist <create|list|play>', category: 'music' },
 
   // ── Leveling ──────────────────────────────────────────────────────────────
   {
@@ -665,6 +831,171 @@ const COMMAND_REGISTRY = [
     usage: '/verify user <roblox_username>',
     category: 'utility',
   },
+  { name: 'avatar', description: 'Get a user\'s avatar.', usage: '/avatar [user]', category: 'utility' },
+  { name: 'banner', description: 'Get a user\'s profile banner.', usage: '/banner [user]', category: 'utility' },
+  { name: 'bot-stats', description: 'View detailed bot statistics.', usage: '/bot-stats', category: 'utility' },
+  { name: 'uptime', description: 'Check how long the bot has been online.', usage: '/uptime', category: 'utility' },
+  { name: 'weather', description: 'Get the current weather for a location.', usage: '/weather <location>', category: 'utility' },
+  { name: 'calculator', description: 'Evaluate a mathematical expression.', usage: '/calculator <expression>', category: 'utility' },
+  { name: 'unit-convert', description: 'Convert between units of measurement.', usage: '/unit-convert <value> <conversion>', category: 'utility' },
+  { name: 'qr-code', description: 'Generate a QR code for any text or URL.', usage: '/qr-code <text>', category: 'utility' },
+  { name: 'translate', description: 'Translate text to another language.', usage: '/translate <text> <language>', category: 'utility' },
+  { name: 'time', description: 'Get the current time in a timezone.', usage: '/time [timezone]', category: 'utility' },
+  { name: 'define', description: 'Define a word using the dictionary.', usage: '/define <word>', category: 'utility' },
+  { name: 'reverse-image', description: 'Get reverse image search links.', usage: '/reverse-image <url>', category: 'utility' },
+
+  // ── Tickets ───────────────────────────────────────────────────────────────
+  { name: 'ticket-create', description: 'Create a support ticket.', usage: '/ticket-create [reason]', category: 'tickets' },
+  { name: 'ticket-close', description: 'Close the current ticket.', usage: '/ticket-close [reason]', category: 'tickets' },
+  { name: 'ticket-add', description: 'Add a user to the current ticket.', usage: '/ticket-add <user>', category: 'tickets' },
+  { name: 'ticket-remove', description: 'Remove a user from the current ticket.', usage: '/ticket-remove <user>', category: 'tickets' },
+  { name: 'ticket-rename', description: 'Rename the current ticket channel.', usage: '/ticket-rename <name>', category: 'tickets' },
+  { name: 'ticket-config', description: 'Configure the ticket system.', usage: '/ticket-config', category: 'tickets', extra: 'Requires: Manage Server' },
+  { name: 'tickets', description: 'View your open tickets.', usage: '/tickets', category: 'tickets' },
+  { name: 'ticket-logs', description: 'View ticket logs for this server.', usage: '/ticket-logs', category: 'tickets', extra: 'Requires: Manage Server' },
+
+  // ── Reaction Roles ────────────────────────────────────────────────────────
+  { name: 'reaction-role-add', description: 'Add a reaction role to a message.', usage: '/reaction-role-add <message_id> <emoji> <role>', category: 'roles', extra: 'Requires: Manage Roles' },
+  { name: 'reaction-role-remove', description: 'Remove a reaction role from a message.', usage: '/reaction-role-remove <message_id> <emoji>', category: 'roles', extra: 'Requires: Manage Roles' },
+  { name: 'reaction-role-list', description: 'List all reaction roles in this server.', usage: '/reaction-role-list', category: 'roles', extra: 'Requires: Manage Roles' },
+  { name: 'reaction-role-config', description: 'Configure the reaction role system.', usage: '/reaction-role-config <enabled>', category: 'roles', extra: 'Requires: Manage Server' },
+  { name: 'reaction-role-test', description: 'Test a reaction role configuration.', usage: '/reaction-role-test <message_id>', category: 'roles', extra: 'Requires: Manage Roles' },
+
+  // ── Polls & Giveaways ─────────────────────────────────────────────────────
+  { name: 'poll', description: 'Create a poll.', usage: '/poll <question> <options>', category: 'giveaways' },
+  { name: 'poll-results', description: 'View the results of a poll.', usage: '/poll-results <message_id>', category: 'giveaways' },
+  { name: 'poll-end', description: 'End a poll early.', usage: '/poll-end <message_id>', category: 'giveaways', extra: 'Requires: Manage Messages' },
+  { name: 'giveaway-create', description: 'Create a giveaway.', usage: '/giveaway-create <prize> <duration> [winners]', category: 'giveaways', extra: 'Requires: Manage Server' },
+  { name: 'giveaway-end', description: 'End a giveaway early and pick winners.', usage: '/giveaway-end <message_id>', category: 'giveaways', extra: 'Requires: Manage Server' },
+  { name: 'giveaway-reroll', description: 'Reroll the winners of an ended giveaway.', usage: '/giveaway-reroll <message_id>', category: 'giveaways', extra: 'Requires: Manage Server' },
+  { name: 'giveaways', description: 'View active giveaways in this server.', usage: '/giveaways', category: 'giveaways' },
+  { name: 'giveaway-logs', description: 'View giveaway history for this server.', usage: '/giveaway-logs', category: 'giveaways', extra: 'Requires: Manage Server' },
+
+  // ── Reminders ─────────────────────────────────────────────────────────────
+  { name: 'remind', description: 'Set a reminder.', usage: '/remind <time> <message>', category: 'reminders' },
+  { name: 'reminders', description: 'View your active reminders.', usage: '/reminders', category: 'reminders' },
+  { name: 'remove-reminder', description: 'Remove a reminder by ID.', usage: '/remove-reminder <id>', category: 'reminders' },
+  { name: 'edit-reminder', description: 'Edit an existing reminder.', usage: '/edit-reminder <id> <message>', category: 'reminders' },
+  { name: 'reminder-config', description: 'Configure the reminder system.', usage: '/reminder-config', category: 'reminders', extra: 'Requires: Manage Server' },
+
+  // ── Suggestions ───────────────────────────────────────────────────────────
+  { name: 'suggest', description: 'Submit a suggestion for the server.', usage: '/suggest <suggestion>', category: 'suggestions' },
+  { name: 'suggestions', description: 'View suggestions for this server.', usage: '/suggestions [status]', category: 'suggestions' },
+  { name: 'suggestion-approve', description: 'Approve a suggestion.', usage: '/suggestion-approve <id> [reason]', category: 'suggestions', extra: 'Requires: Manage Server' },
+  { name: 'suggestion-deny', description: 'Deny a suggestion.', usage: '/suggestion-deny <id> [reason]', category: 'suggestions', extra: 'Requires: Manage Server' },
+  { name: 'suggestion-config', description: 'Configure the suggestion system.', usage: '/suggestion-config', category: 'suggestions', extra: 'Requires: Manage Server' },
+
+  // ── Starboard ─────────────────────────────────────────────────────────────
+  { name: 'starboard-config', description: 'Configure the starboard.', usage: '/starboard-config', category: 'starboard', extra: 'Requires: Manage Server' },
+  { name: 'starboard', description: 'View the top starred messages.', usage: '/starboard', category: 'starboard' },
+  { name: 'star-message', description: 'Manually star a message.', usage: '/star-message <message_id>', category: 'starboard' },
+  { name: 'unstar-message', description: 'Remove a message from the starboard.', usage: '/unstar-message <message_id>', category: 'starboard' },
+  { name: 'starboard-logs', description: 'View starboard activity logs.', usage: '/starboard-logs', category: 'starboard', extra: 'Requires: Manage Server' },
+
+  // ── AFK ───────────────────────────────────────────────────────────────────
+  { name: 'afk', description: 'Set your AFK status.', usage: '/afk [reason]', category: 'afk' },
+  { name: 'afk-remove', description: 'Remove a user\'s AFK status.', usage: '/afk-remove [user]', category: 'afk' },
+  { name: 'afk-list', description: 'View all AFK members in this server.', usage: '/afk-list', category: 'afk' },
+  { name: 'afk-config', description: 'Configure the AFK system.', usage: '/afk-config <enabled>', category: 'afk', extra: 'Requires: Manage Server' },
+  { name: 'afk-logs', description: 'View AFK activity logs.', usage: '/afk-logs', category: 'afk', extra: 'Requires: Manage Server' },
+
+  // ── Temp Voice ────────────────────────────────────────────────────────────
+  { name: 'temp-voice-create', description: 'Create a temporary voice channel.', usage: '/temp-voice-create [name] [limit]', category: 'voice' },
+  { name: 'temp-voice-delete', description: 'Delete your temporary voice channel.', usage: '/temp-voice-delete', category: 'voice' },
+  { name: 'temp-voice-config', description: 'Configure the temp voice system.', usage: '/temp-voice-config', category: 'voice', extra: 'Requires: Manage Server' },
+  { name: 'temp-voice-list', description: 'List all active temporary voice channels.', usage: '/temp-voice-list', category: 'voice' },
+  { name: 'temp-voice-logs', description: 'View temp voice channel activity logs.', usage: '/temp-voice-logs', category: 'voice', extra: 'Requires: Manage Server' },
+
+  // ── Auto Responses ────────────────────────────────────────────────────────
+  { name: 'auto-response-add', description: 'Add an automatic response trigger.', usage: '/auto-response-add <trigger> <response>', category: 'auto', extra: 'Requires: Manage Server' },
+  { name: 'auto-response-remove', description: 'Remove an auto response by trigger.', usage: '/auto-response-remove <trigger>', category: 'auto', extra: 'Requires: Manage Server' },
+  { name: 'auto-response-list', description: 'List all auto responses for this server.', usage: '/auto-response-list', category: 'auto', extra: 'Requires: Manage Server' },
+  { name: 'auto-response-config', description: 'Configure the auto response system.', usage: '/auto-response-config <enabled>', category: 'auto', extra: 'Requires: Manage Server' },
+  { name: 'auto-response-test', description: 'Test if a message would trigger an auto response.', usage: '/auto-response-test <message>', category: 'auto', extra: 'Requires: Manage Server' },
+
+  // ── Counting ──────────────────────────────────────────────────────────────
+  { name: 'counting-channel', description: 'Set the counting channel.', usage: '/counting-channel <channel>', category: 'counting', extra: 'Requires: Manage Server' },
+  { name: 'counting-reset', description: 'Reset the counting channel back to 0.', usage: '/counting-reset', category: 'counting', extra: 'Requires: Manage Server' },
+  { name: 'counting-stats', description: 'View counting channel statistics.', usage: '/counting-stats', category: 'counting' },
+  { name: 'counting-config', description: 'Configure the counting channel.', usage: '/counting-config', category: 'counting', extra: 'Requires: Manage Server' },
+  { name: 'counting-logs', description: 'View counting channel logs.', usage: '/counting-logs', category: 'counting', extra: 'Requires: Manage Server' },
+
+  // ── Confessions ───────────────────────────────────────────────────────────
+  { name: 'confess', description: 'Submit an anonymous confession.', usage: '/confess <confession>', category: 'confessions' },
+  { name: 'confessions', description: 'View approved confessions.', usage: '/confessions [status]', category: 'confessions' },
+  { name: 'confession-approve', description: 'Approve a confession.', usage: '/confession-approve <id>', category: 'confessions', extra: 'Requires: Manage Server' },
+  { name: 'confession-deny', description: 'Deny a confession.', usage: '/confession-deny <id>', category: 'confessions', extra: 'Requires: Manage Server' },
+  { name: 'confession-config', description: 'Configure the confession system.', usage: '/confession-config', category: 'confessions', extra: 'Requires: Manage Server' },
+
+  // ── Birthdays ─────────────────────────────────────────────────────────────
+  { name: 'birthday-set', description: 'Set your birthday.', usage: '/birthday-set <day> <month> [year]', category: 'birthdays' },
+  { name: 'birthday-remove', description: 'Remove your birthday from the bot.', usage: '/birthday-remove', category: 'birthdays' },
+  { name: 'birthdays', description: 'View upcoming birthdays in this server.', usage: '/birthdays', category: 'birthdays' },
+  { name: 'birthday-config', description: 'Configure birthday announcements.', usage: '/birthday-config', category: 'birthdays', extra: 'Requires: Manage Server' },
+  { name: 'birthday-logs', description: 'View birthday announcement logs.', usage: '/birthday-logs', category: 'birthdays', extra: 'Requires: Manage Server' },
+
+  // ── Embed Builder ─────────────────────────────────────────────────────────
+  { name: 'embed-create', description: 'Create a custom embed.', usage: '/embed-create <title>', category: 'embeds', extra: 'Requires: Manage Messages' },
+  { name: 'embed-edit', description: 'Edit an existing embed message.', usage: '/embed-edit <message_id>', category: 'embeds', extra: 'Requires: Manage Messages' },
+  { name: 'embed-delete', description: 'Delete an embed message.', usage: '/embed-delete <message_id>', category: 'embeds', extra: 'Requires: Manage Messages' },
+  { name: 'embed-preview', description: 'Preview an embed before sending.', usage: '/embed-preview <title>', category: 'embeds', extra: 'Requires: Manage Messages' },
+  { name: 'embed-send', description: 'Send an embed to a specific channel.', usage: '/embed-send <channel> <title>', category: 'embeds', extra: 'Requires: Manage Messages' },
+
+  // ── Backups ───────────────────────────────────────────────────────────────
+  { name: 'backup-create', description: 'Create a backup of the server configuration.', usage: '/backup-create [name]', category: 'backups', extra: 'Requires: Administrator' },
+  { name: 'backup-list', description: 'List all server backups.', usage: '/backup-list', category: 'backups', extra: 'Requires: Administrator' },
+  { name: 'backup-restore', description: 'Restore a server backup.', usage: '/backup-restore <id>', category: 'backups', extra: 'Requires: Administrator' },
+  { name: 'backup-delete', description: 'Delete a server backup.', usage: '/backup-delete <id>', category: 'backups', extra: 'Requires: Administrator' },
+  { name: 'backup-info', description: 'View information about a backup.', usage: '/backup-info <id>', category: 'backups', extra: 'Requires: Administrator' },
+
+  // ── Message Sniping ───────────────────────────────────────────────────────
+  { name: 'snipe', description: 'View the last deleted message in this channel.', usage: '/snipe', category: 'sniping' },
+  { name: 'snipe-edit', description: 'View the last edited message in this channel.', usage: '/snipe-edit', category: 'sniping' },
+  { name: 'snipe-config', description: 'Configure the message sniping system.', usage: '/snipe-config <enabled>', category: 'sniping', extra: 'Requires: Manage Server' },
+  { name: 'snipe-logs', description: 'View snipe activity logs.', usage: '/snipe-logs', category: 'sniping', extra: 'Requires: Manage Server' },
+  { name: 'snipe-clear', description: 'Clear the snipe cache for this channel.', usage: '/snipe-clear', category: 'sniping', extra: 'Requires: Manage Messages' },
+
+  // ── Sticky Messages ───────────────────────────────────────────────────────
+  { name: 'sticky-add', description: 'Add a sticky message to this channel.', usage: '/sticky-add <message>', category: 'sticky', extra: 'Requires: Manage Messages' },
+  { name: 'sticky-remove', description: 'Remove the sticky message from this channel.', usage: '/sticky-remove', category: 'sticky', extra: 'Requires: Manage Messages' },
+  { name: 'sticky-list', description: 'List all sticky messages in this server.', usage: '/sticky-list', category: 'sticky', extra: 'Requires: Manage Messages' },
+  { name: 'sticky-config', description: 'Configure sticky message behaviour.', usage: '/sticky-config', category: 'sticky', extra: 'Requires: Manage Server' },
+  { name: 'sticky-logs', description: 'View sticky message activity logs.', usage: '/sticky-logs', category: 'sticky', extra: 'Requires: Manage Server' },
+
+  // ── Invite Tracking ───────────────────────────────────────────────────────
+  { name: 'invites', description: 'View invite statistics for a user.', usage: '/invites [user]', category: 'invites' },
+  { name: 'invite-info', description: 'Get information about an invite code.', usage: '/invite-info <code>', category: 'invites' },
+  { name: 'invite-logs', description: 'View invite tracking logs.', usage: '/invite-logs', category: 'invites', extra: 'Requires: Manage Server' },
+  { name: 'invite-config', description: 'Configure invite tracking.', usage: '/invite-config <enabled>', category: 'invites', extra: 'Requires: Manage Server' },
+  { name: 'invite-reset', description: 'Reset invite count for a user.', usage: '/invite-reset <user>', category: 'invites', extra: 'Requires: Manage Server' },
+
+  // ── Welcome & Goodbye ─────────────────────────────────────────────────────
+  { name: 'welcome-message', description: 'Set the welcome message for new members.', usage: '/welcome-message <message>', category: 'welcome', extra: 'Requires: Manage Server' },
+  { name: 'welcome-channel', description: 'Set the channel for welcome messages.', usage: '/welcome-channel <channel>', category: 'welcome', extra: 'Requires: Manage Server' },
+  { name: 'goodbye-message', description: 'Set the goodbye message for leaving members.', usage: '/goodbye-message <message>', category: 'welcome', extra: 'Requires: Manage Server' },
+  { name: 'goodbye-channel', description: 'Set the channel for goodbye messages.', usage: '/goodbye-channel <channel>', category: 'welcome', extra: 'Requires: Manage Server' },
+  { name: 'welcome-test', description: 'Test the welcome message.', usage: '/welcome-test', category: 'welcome', extra: 'Requires: Manage Server' },
+
+  // ── Logging ───────────────────────────────────────────────────────────────
+  { name: 'logs', description: 'View recent server logs.', usage: '/logs [type]', category: 'logging', extra: 'Requires: View Audit Log' },
+  { name: 'log-config', description: 'Configure the logging system.', usage: '/log-config', category: 'logging', extra: 'Requires: Manage Server' },
+  { name: 'message-logs', description: 'View recent message edit/delete logs.', usage: '/message-logs [channel]', category: 'logging', extra: 'Requires: Manage Messages' },
+  { name: 'join-logs', description: 'View recent member join logs.', usage: '/join-logs', category: 'logging', extra: 'Requires: Manage Server' },
+  { name: 'leave-logs', description: 'View recent member leave logs.', usage: '/leave-logs', category: 'logging', extra: 'Requires: Manage Server' },
+  { name: 'ban-logs', description: 'View recent ban logs.', usage: '/ban-logs', category: 'logging', extra: 'Requires: Ban Members' },
+  { name: 'kick-logs', description: 'View recent kick logs.', usage: '/kick-logs', category: 'logging', extra: 'Requires: Kick Members' },
+  { name: 'warn-logs', description: 'View recent warning logs.', usage: '/warn-logs [user]', category: 'logging', extra: 'Requires: Moderate Members' },
+
+  // ── Administration ────────────────────────────────────────────────────────
+  { name: 'settings', description: 'View all server settings.', usage: '/settings', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'settings-update', description: 'Update a server setting.', usage: '/settings-update <setting> <value>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'prefix', description: 'Change the bot prefix for this server.', usage: '/prefix <prefix>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'language', description: 'Set the bot language for this server.', usage: '/language <language>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'permissions', description: 'View or check permissions for a role or user.', usage: '/permissions [role] [user]', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'cooldown', description: 'Set a custom cooldown for a command.', usage: '/cooldown <command> <seconds>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'disable-command', description: 'Disable a command in this server.', usage: '/disable-command <command>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'enable-command', description: 'Re-enable a disabled command in this server.', usage: '/enable-command <command>', category: 'admin', extra: 'Requires: Manage Server' },
+  { name: 'command-list', description: 'List all commands and their status.', usage: '/command-list', category: 'admin', extra: 'Requires: Manage Server' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
