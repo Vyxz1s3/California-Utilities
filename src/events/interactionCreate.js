@@ -1,11 +1,13 @@
 import { EmbedBuilder } from 'discord.js';
+import { checkCooldown } from '../utils/cooldown.js';
+import { getOrCreateGuild } from '../utils/helpers.js';
 
 export default {
   name: 'interactionCreate',
-  async execute(interaction) {
+  async execute(client, interaction) {
     // Handle slash commands
     if (interaction.isChatInputCommand()) {
-      const command = interaction.client.commands.get(interaction.commandName);
+      const command = client.slashCommands.get(interaction.commandName);
 
       if (!command) {
         console.error(`No command matching ${interaction.commandName} was found.`);
@@ -13,7 +15,21 @@ export default {
       }
 
       try {
-        await command.execute(interaction, interaction.client);
+        // Check cooldown
+        const cooldown = checkCooldown(client, interaction.user.id, interaction.commandName, 3);
+        if (cooldown.onCooldown) {
+          return interaction.reply({
+            content: `⏱️ You're on cooldown! Try again in ${cooldown.timeLeft}s`,
+            ephemeral: true,
+          });
+        }
+
+        // Ensure guild exists in database
+        if (interaction.guild) {
+          await getOrCreateGuild(interaction.guild.id, interaction.guild.name);
+        }
+
+        await command.execute(interaction, client);
       } catch (error) {
         console.error(error);
         if (interaction.replied || interaction.deferred) {
