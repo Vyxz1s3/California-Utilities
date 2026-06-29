@@ -9,7 +9,7 @@ export default {
         .setDescription('Channel to delete')
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   name: 'channel-delete',
   description: 'Delete a channel',
@@ -17,8 +17,8 @@ export default {
   async execute(interaction, client) {
     const channel = interaction.options.getChannel('channel');
 
-    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return interaction.reply({ content: '❌ You do not have permission to manage channels.', ephemeral: true });
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need Administrator permission to delete channels.', ephemeral: true });
     }
 
     const channelName = channel.name;
@@ -36,3 +36,4 @@ export default {
     await interaction.reply({ embeds: [embed] });
   },
 };
+

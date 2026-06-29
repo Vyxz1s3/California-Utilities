@@ -19,7 +19,7 @@ export default {
           { name: 'Announcement', value: 'announcement' }
         )
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   name: 'channel-create',
   description: 'Create a channel',
@@ -28,8 +28,8 @@ export default {
     const name = interaction.options.getString('name');
     const typeStr = interaction.options.getString('type') || 'text';
 
-    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return interaction.reply({ content: '❌ You do not have permission to manage channels.', ephemeral: true });
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need Administrator permission to create channels.', ephemeral: true });
     }
 
     const typeMap = {
@@ -56,3 +56,4 @@ export default {
     await interaction.reply({ embeds: [embed] });
   },
 };
+
