@@ -10,32 +10,32 @@ export default {
         .setRequired(true)
     )
     .addStringOption(option =>
-      option.setName('new_name')
-        .setDescription('New name for the channel')
+      option.setName('name')
+        .setDescription('New channel name')
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   name: 'channel-rename',
   description: 'Rename a channel',
 
   async execute(interaction, client) {
     const channel = interaction.options.getChannel('channel');
-    const newName = interaction.options.getString('new_name');
+    const newName = interaction.options.getString('name');
 
-    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return interaction.reply({ content: '❌ You do not have permission to manage channels.', ephemeral: true });
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need Administrator permission to rename channels.', ephemeral: true });
     }
 
     const oldName = channel.name;
-    await channel.setName(newName);
+    await channel.setName(newName, `Renamed by ${interaction.user.tag}`);
 
     const embed = new EmbedBuilder()
       .setColor(0x3498db)
       .setTitle('✏️ Channel Renamed')
       .addFields(
         { name: 'Old Name', value: `#${oldName}`, inline: true },
-        { name: 'New Name', value: `${channel}`, inline: true },
+        { name: 'New Name', value: `#${newName}`, inline: true },
         { name: 'Renamed by', value: interaction.user.tag, inline: true }
       )
       .setTimestamp();
@@ -43,3 +43,4 @@ export default {
     await interaction.reply({ embeds: [embed] });
   },
 };
+
